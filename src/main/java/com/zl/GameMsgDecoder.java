@@ -1,6 +1,7 @@
 package com.zl;
 
 import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.Message;
 import com.zl.msg.GameMsgProtocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -21,20 +22,8 @@ public class GameMsgDecoder extends ChannelInboundHandlerAdapter {
         byteBuf.readBytes(msgBody);
 
         GeneratedMessageV3 cmd = null;
-        switch (msgCode) {
-            case GameMsgProtocol.MsgCode.USER_ENTRY_CMD_VALUE:
-                cmd = GameMsgProtocol.UserEntryCmd.parseFrom(msgBody);
-                break;
-
-            case GameMsgProtocol.MsgCode.WHO_ELSE_IS_HERE_CMD_VALUE:
-                cmd = GameMsgProtocol.WhoElseIsHereCmd.parseFrom(msgBody);
-                break;
-
-            case GameMsgProtocol.MsgCode.USER_MOVE_TO_CMD_VALUE:
-                cmd = GameMsgProtocol.UserMoveToCmd.parseFrom(msgBody);
-                break;
-
-        }
+        Message.Builder msgBuilder = GameMsgRecognizer.getMsgBuilder(msgCode);
+        cmd = (GeneratedMessageV3) msgBuilder.mergeFrom(msgBody).build();
 
         if (cmd != null) {
             ctx.fireChannelRead(cmd);
