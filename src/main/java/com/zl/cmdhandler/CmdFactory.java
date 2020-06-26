@@ -6,6 +6,7 @@ import com.zl.util.PackageUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,36 +23,32 @@ public final class CmdFactory {
     }
 
     public static void init() {
-        //  _handlerMap.put(GameMsgProtocol.UserEntryCmd.class, new UserEntryCmdHandler());
-        /*try {
-            Class<?>[] declaredClazzList = GameMsgProtocol.class.getDeclaredClasses();
-            for (Class<?> clazz : declaredClazzList) {
-                if (GeneratedMessageV3.class.isAssignableFrom(clazz)) continue;
-                String simpleName = clazz.getSimpleName();
-                if (!simpleName.endsWith("Cmd")) continue;
-                String classFullName = "com.zl.cmdhandler." + simpleName + "Handler";
-                handlerMap.put(clazz, (ICmdHandler<?>) Class.forName(classFullName).newInstance());
-            }
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
-        }*/
         LOGGER.info("=====初始化CmdFactory=====");
         try {
             String packageName = CmdFactory.class.getPackage().getName();
             Set<Class<?>> handlerClazzSet = PackageUtil.listSubClazz(packageName, true, ICmdHandler.class);
             for (Class<?> handlerClazz : handlerClazzSet) {
                 if ((handlerClazz.getModifiers() & Modifier.ABSTRACT) != 0) continue;
-                ICmdHandler<?> handlerClazzNewInstance = (ICmdHandler<?>) handlerClazz.newInstance();
-                String handlerClazzSimpleName = handlerClazz.getSimpleName();
-                String cmdClassSimpleName = handlerClazzSimpleName.substring(0, handlerClazzSimpleName.length() - 7);
-                Class<?>[] declaredClazzList = GameMsgProtocol.class.getDeclaredClasses();
-                for (Class<?> clazz : declaredClazzList) {
-                    if (!GeneratedMessageV3.class.isAssignableFrom(clazz)) continue;
-                    String simpleName = clazz.getSimpleName();
-                    if (!simpleName.equals(cmdClassSimpleName)) continue;
-                    LOGGER.info("{} ===> {}", clazz, handlerClazzNewInstance);
-                    handlerMap.put(clazz, handlerClazzNewInstance);
+                Method[] handlerClazzDeclaredMethods = handlerClazz.getDeclaredMethods();
+                for (Method method : handlerClazzDeclaredMethods) {
+                    if (!"handler".equals(method.getName())) {
+                        continue;
+                    }
+                    Class<?>[] parameterTypes = method.getParameterTypes();
+                    Class<?> msgType = null;
+                    if (parameterTypes.length < 2
+                            || parameterTypes[1] == GeneratedMessageV3.class
+                            || !GeneratedMessageV3.class.isAssignableFrom(parameterTypes[1])) {
+                        continue;
+                    }
+                    msgType = parameterTypes[1];
+                    ICmdHandler<?> handlerClazzNewInstance = (ICmdHandler<?>) handlerClazz.newInstance();
+                    LOGGER.info("{} ===> {}", msgType, handlerClazzNewInstance);
+                    handlerMap.put(msgType, handlerClazzNewInstance);
                 }
+
+
+
             }
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
