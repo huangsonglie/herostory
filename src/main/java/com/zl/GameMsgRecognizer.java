@@ -16,7 +16,7 @@ public final class GameMsgRecognizer {
 
     private static final Map<Integer, GeneratedMessageV3> msgMap = new HashMap<>();
 
-    private static final Map<Class<? extends GeneratedMessageV3>, Integer> msgCodeMap = new HashMap<>();
+    private static final Map<Class<?>, Integer> msgCodeMap = new HashMap<>();
 
 
     private GameMsgRecognizer() {
@@ -24,14 +24,31 @@ public final class GameMsgRecognizer {
     }
 
     public static void init() {
-        msgMap.put(GameMsgProtocol.MsgCode.USER_ENTRY_CMD_VALUE, GameMsgProtocol.UserEntryCmd.getDefaultInstance());
-        msgMap.put(GameMsgProtocol.MsgCode.WHO_ELSE_IS_HERE_CMD_VALUE, GameMsgProtocol.WhoElseIsHereCmd.getDefaultInstance());
-        msgMap.put(GameMsgProtocol.MsgCode.USER_MOVE_TO_CMD_VALUE, GameMsgProtocol.UserMoveToCmd.getDefaultInstance());
+        try {
+            Class<?>[] declaredClazzList = GameMsgProtocol.class.getDeclaredClasses();
+            for (Class<?> declaredClazz : declaredClazzList) {
+                if (!GeneratedMessageV3.class.isAssignableFrom(declaredClazz)) continue;
+                String simpleName = declaredClazz.getSimpleName();
+                String lowerCaseSimpleName = simpleName.toLowerCase();
+                GameMsgProtocol.MsgCode[] msgCodes = GameMsgProtocol.MsgCode.values();
+                for (GameMsgProtocol.MsgCode msgCode : msgCodes) {
+                    String msgCodeName = msgCode.name();
+                    msgCodeName = msgCodeName.toLowerCase().replace("_", "");
+                    if (msgCodeName.equals(lowerCaseSimpleName)) {
+                        if (msgCodeName.indexOf("cmd") != -1) {
+                            msgMap.put(msgCode.getNumber(), (GeneratedMessageV3) declaredClazz.getDeclaredMethod("getDefaultInstance").invoke(declaredClazz));
+                        } else if (msgCodeName.indexOf("result") != -1) {
+                            msgCodeMap.put(declaredClazz, msgCode.getNumber());
+                        }
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+        }
 
-        msgCodeMap.put(GameMsgProtocol.UserEntryResult.class, GameMsgProtocol.MsgCode.USER_ENTRY_RESULT_VALUE);
-        msgCodeMap.put(GameMsgProtocol.WhoElseIsHereResult.class, GameMsgProtocol.MsgCode.WHO_ELSE_IS_HERE_RESULT_VALUE);
-        msgCodeMap.put(GameMsgProtocol.UserMoveToResult.class, GameMsgProtocol.MsgCode.USER_MOVE_TO_RESULT_VALUE);
-        msgCodeMap.put(GameMsgProtocol.UserQuitResult.class, GameMsgProtocol.MsgCode.USER_QUIT_RESULT_VALUE);
+
     }
 
     public static Message.Builder getMsgBuilder (int msgCode) {

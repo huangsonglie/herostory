@@ -1,5 +1,6 @@
 package com.zl;
 
+import com.zl.cmdhandler.CmdFactory;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -38,6 +39,7 @@ public class Server {
             }
         });
 
+        CmdFactory.init();
         GameMsgRecognizer.init();
 
         try {
