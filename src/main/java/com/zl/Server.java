@@ -41,6 +41,7 @@ public class Server {
 
         CmdFactory.init();
         GameMsgRecognizer.init();
+        MySqlSessionFactory.init();
 
         try {
             ChannelFuture f = b.bind(12345).sync();

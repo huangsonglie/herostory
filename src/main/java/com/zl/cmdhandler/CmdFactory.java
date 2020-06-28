@@ -31,7 +31,7 @@ public final class CmdFactory {
                 if ((handlerClazz.getModifiers() & Modifier.ABSTRACT) != 0) continue;
                 Method[] handlerClazzDeclaredMethods = handlerClazz.getDeclaredMethods();
                 for (Method method : handlerClazzDeclaredMethods) {
-                    if (!"handler".equals(method.getName())) {
+                    if (!"handle".equals(method.getName())) {
                         continue;
                     }
                     Class<?>[] parameterTypes = method.getParameterTypes();

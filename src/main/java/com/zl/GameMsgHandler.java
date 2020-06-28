@@ -2,6 +2,7 @@ package com.zl;
 
 import com.google.protobuf.GeneratedMessageV3;
 import com.zl.cmdhandler.*;
+import com.zl.model.UserManager;
 import com.zl.msg.GameMsgProtocol;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -38,16 +39,11 @@ public class GameMsgHandler extends SimpleChannelInboundHandler<Object> {
 //        super.handlerRemoved(ctx);
 //    }
 
-    protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
         LOGGER.info("服务器收到消息, msg={}", msg);
 
-        ICmdHandler<? extends GeneratedMessageV3> iCmdHandler = CmdFactory.create(msg);
-        iCmdHandler.handler(ctx, cast(msg));
+        GameMsgProcessor.getInstance().process(ctx, msg);
 
     }
 
-    private <TCmd extends GeneratedMessageV3> TCmd cast(Object msg) {
-        if (msg == null) return null;
-        return (TCmd) msg;
-    }
 }
